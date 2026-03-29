@@ -1,0 +1,17 @@
+# Backend
+backend/target/
+backend/.mvn/
+*.class
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/settings.json
+*.iml
+.idea/
+
+# Secretos
+application.properties
