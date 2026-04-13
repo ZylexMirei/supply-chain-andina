@@ -5,18 +5,28 @@ use PHPMailer\PHPMailer\Exception;
 require '../vendor/autoload.php';
 require_once '../../conexion.php';
 
-header('Content-Type: application/json');
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    jsonResponse(["status" => "error", "message" => "Método no permitido"], 405);
+}
 
-$data = json_decode(file_get_contents("php://input"), true);
-$email = $data['email'] ?? '';
+$data = json_decode(file_get_contents("php://input"), true) ?: [];
+$email = trim($data['email'] ?? '');
 $password = $data['password'] ?? '';
 
+if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
+    jsonResponse(["status" => "error", "message" => "Credenciales inválidas"], 400);
+}
+
 // 1. Buscamos al usuario
-$stmt = $pdo->prepare("SELECT u.id_usuario, u.rol, u.correo_verificado, e.nombre FROM usuario u JOIN empleado e ON u.id_empleado = e.id_empleado WHERE u.email = ? AND u.password = ?");
-$stmt->execute([$email, $password]);
+$stmt = $pdo->prepare("SELECT u.id_usuario, u.rol, u.correo_verificado, u.password, e.nombre FROM usuario u JOIN empleado e ON u.id_empleado = e.id_empleado WHERE u.email = ?");
+$stmt->execute([$email]);
 $user = $stmt->fetch();
 
-if ($user) {
+if ($user && (password_verify($password, $user['password']) || hash_equals((string) $user['password'], (string) $password))) {
+    if (hash_equals((string) $user['password'], (string) $password)) {
+        $rehash = $pdo->prepare("UPDATE usuario SET password = ? WHERE id_usuario = ?");
+        $rehash->execute([password_hash($password, PASSWORD_DEFAULT), $user['id_usuario']]);
+    }
     
     // --- CASO A: EL USUARIO AÚN NO HA VERIFICADO SU CORREO ---
     if ($user['correo_verificado'] == 0) {
@@ -35,6 +45,9 @@ if ($user) {
         // Enviamos el correo
         $mail = new PHPMailer(true);
         try {
+            if (!SMTP_USER || !SMTP_PASS) {
+                throw new Exception('SMTP no configurado');
+            }
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
@@ -53,19 +66,21 @@ if ($user) {
                               <p>Este código expirará en 15 minutos. No lo compartas con nadie.</p>";
 
             $mail->send();
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+            error_log('Error enviando OTP: ' . $e->getMessage());
+            jsonResponse(["status" => "error", "message" => "No se pudo enviar el código de verificación."], 500);
+        }
 
         // Le avisamos al Frontend que tiene que mostrar la pantalla de "Ingresa tu código"
-        echo json_encode([
+        jsonResponse([
             "status" => "pending_verification",
             "message" => "Te enviamos un código de 6 dígitos a tu correo.",
             "id_usuario" => $user['id_usuario'] // El frontend lo necesitará
         ]);
-        exit(); // Detenemos el script aquí
     }
 
     // --- CASO B: EL USUARIO YA ESTÁ VERIFICADO (Login Normal) ---
-    echo json_encode([
+    jsonResponse([
         "status" => "success",
         "message" => "Login exitoso",
         "user" => [
@@ -75,6 +90,6 @@ if ($user) {
     ]);
 
 } else {
-    echo json_encode(["status" => "error", "message" => "Usuario o clave incorrectos"]);
+    jsonResponse(["status" => "error", "message" => "Usuario o clave incorrectos"], 401);
 }
 ?>
