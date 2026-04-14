@@ -1,14 +1,13 @@
 <?php
 // backend/api/aprobar_pedido.php
 require_once '../../conexion.php';
-header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents("php://input"), true);
-    $id_pedido = $data['id_pedido'] ?? null;
+    $data = json_decode(file_get_contents("php://input"), true) ?: [];
+    $id_pedido = (int) ($data['id_pedido'] ?? 0);
 
-    if (!$id_pedido) {
-        die(json_encode(["status" => "error", "message" => "Falta el ID del pedido"]));
+    if ($id_pedido <= 0) {
+        jsonResponse(["status" => "error", "message" => "Falta el ID del pedido"], 400);
     }
 
     try {
@@ -29,23 +28,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $detalles = $stmt_detalle->fetchAll();
 
         // 3. Revisamos stock y lo descontamos
-        $stmt_verificar = $pdo->prepare("SELECT nombre, stock_actual FROM producto WHERE id_producto = ?");
-        $stmt_descontar = $pdo->prepare("UPDATE producto SET stock_actual = stock_actual - ? WHERE id_producto = ?");
+        $stmt_verificar = $pdo->prepare("SELECT nombre FROM producto WHERE id_producto = ?");
+        $stmt_descontar = $pdo->prepare("UPDATE producto SET stock_actual = stock_actual - ? WHERE id_producto = ? AND stock_actual >= ?");
 
         foreach ($detalles as $item) {
-            $id_producto = $item['id_producto'];
-            $cantidad_pedida = $item['cantidad'];
+            $id_producto = (int) $item['id_producto'];
+            $cantidad_pedida = (float) $item['cantidad'];
 
-            // Verificamos si hay suficiente stock físico
-            $stmt_verificar->execute([$id_producto]);
-            $producto = $stmt_verificar->fetch();
-
-            if ($producto['stock_actual'] < $cantidad_pedida) {
-                throw new Exception("Stock insuficiente para el producto: " . $producto['nombre']);
+            if ($cantidad_pedida <= 0) {
+                throw new Exception('Cantidad inválida en detalle de pedido.');
             }
 
-            // Descontamos el stock
-            $stmt_descontar->execute([$cantidad_pedida, $id_producto]);
+            $stmt_verificar->execute([$id_producto]);
+            $producto = $stmt_verificar->fetch();
+            if (!$producto) {
+                throw new Exception("Producto no encontrado: $id_producto");
+            }
+
+            $stmt_descontar->execute([$cantidad_pedida, $id_producto, $cantidad_pedida]);
+            if ($stmt_descontar->rowCount() === 0) {
+                throw new Exception("Stock insuficiente para el producto: " . $producto['nombre']);
+            }
         }
 
         // 4. Cambiamos el estado del pedido a "Aprobado"
@@ -53,13 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_actualizar_pedido->execute([$id_pedido]);
 
         $pdo->commit();
-        echo json_encode(["status" => "success", "message" => "Pedido #$id_pedido aprobado. El stock ha sido descontado."]);
+        jsonResponse(["status" => "success", "message" => "Pedido #$id_pedido aprobado. El stock ha sido descontado."]);
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        error_log('Error aprobando pedido: ' . $e->getMessage());
+        jsonResponse(["status" => "error", "message" => "No se pudo aprobar el pedido."], 409);
     }
 } else {
-    echo json_encode(["status" => "error", "message" => "Método no permitido"]);
+    jsonResponse(["status" => "error", "message" => "Método no permitido"], 405);
 }
 ?>

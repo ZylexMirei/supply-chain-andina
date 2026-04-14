@@ -1,7 +1,5 @@
-import { createContext, useState, useEffect } from 'react';
-
-// Creamos el contexto
-export const ThemeContext = createContext();
+import { useState, useEffect } from 'react';
+import { ThemeContext } from './theme-context';
 
 export function ThemeProvider({ children }) {
   // Leemos si el usuario ya tenía el modo oscuro guardado en su navegador

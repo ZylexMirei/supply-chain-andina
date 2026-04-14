@@ -1,13 +1,20 @@
 <?php
 require_once '../../conexion.php';
-header('Content-Type: application/json');
 
-$data = json_decode(file_get_contents("php://input"), true);
-$email = $data['email'] ?? '';
-$codigo_ingresado = $data['codigo'] ?? '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    jsonResponse(["status" => "error", "message" => "Método no permitido"], 405);
+}
+
+$data = json_decode(file_get_contents("php://input"), true) ?: [];
+$email = trim($data['email'] ?? '');
+$codigo_ingresado = trim((string) ($data['codigo'] ?? ''));
 
 if (!$email || !$codigo_ingresado) {
-    die(json_encode(["status" => "error", "message" => "Faltan datos"]));
+    jsonResponse(["status" => "error", "message" => "Faltan datos"], 400);
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^\d{6}$/', $codigo_ingresado)) {
+    jsonResponse(["status" => "error", "message" => "Datos de verificación inválidos"], 400);
 }
 
 // Buscamos usando el email
@@ -33,7 +40,7 @@ if ($user) {
     ");
     $update->execute([$user['id_usuario']]);
 
-    echo json_encode([
+    jsonResponse([
         "status" => "success",
         "message" => "¡Correo verificado con exito!",
         "user" => [
@@ -42,6 +49,6 @@ if ($user) {
         ]
     ]);
 } else {
-    echo json_encode(["status" => "error", "message" => "Código incorrecto o expirado."]);
+    jsonResponse(["status" => "error", "message" => "Código incorrecto o expirado."], 401);
 }
 ?>
