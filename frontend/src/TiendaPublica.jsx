@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Sparkles, PlusCircle, Search } from 'lucide-react';
+import { getJson } from './lib/api.js';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+function ProductSkeleton() {
+  return (
+    <article className="product-card skeleton" aria-hidden="true">
+      <span className="stock-badge normal skeleton-pill" />
+      <div className="product-image-placeholder skeleton-box" />
+      <div className="skeleton-line" />
+      <div className="skeleton-line short" />
+      <div className="skeleton-line" />
+      <button type="button" className="skeleton-btn" tabIndex={-1} aria-hidden="true" />
+    </article>
+  );
+}
 
 export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
   const [productos, setProductos] = useState([]);
@@ -14,37 +26,51 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
   const [categoriaActiva, setCategoriaActiva] = useState('Todas');
 
   useEffect(() => {
-    fetch(`${API_BASE}/productos/listar.php`)
-      .then((res) => res.json())
+    let alive = true;
+    getJson('/productos/listar.php')
       .then((respuesta) => {
-        if (respuesta.status === 'success') {
+        if (!alive) return;
+        if (respuesta?.status === 'success') {
           setProductos(respuesta.data || []);
-          setErrorProductos('');
         } else {
-          setErrorProductos('No se pudo cargar el catálogo.');
+          setErrorProductos(respuesta?.message || 'No se pudo cargar el catálogo.');
         }
       })
-      .catch(() => {
-        setErrorProductos('Error de conexión al cargar productos.');
+      .catch((err) => {
+        if (!alive) return;
+        setErrorProductos(err?.message || 'Error de conexión al cargar productos.');
       })
-      .finally(() => setCargandoProductos(false));
+      .finally(() => {
+        if (!alive) return;
+        setCargandoProductos(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/ia/recomendaciones.php?id=1`)
-      .then((res) => res.json())
+    let alive = true;
+    getJson('/ia/recomendaciones.php?id=1')
       .then((respuesta) => {
-        if (respuesta.status === 'success') {
-          setSugerencias(respuesta.data);
-          setErrorIA('');
+        if (!alive) return;
+        if (respuesta?.status === 'success') {
+          setSugerencias(respuesta.data || []);
         } else {
-          setErrorIA('No se pudieron cargar recomendaciones.');
+          setErrorIA(respuesta?.message || 'No se pudieron cargar recomendaciones.');
         }
       })
-      .catch(() => {
-        setErrorIA('Error de conexión al cargar recomendaciones.');
+      .catch((err) => {
+        if (!alive) return;
+        setErrorIA(err?.message || 'Error de conexión al cargar recomendaciones.');
       })
-      .finally(() => setCargandoIA(false));
+      .finally(() => {
+        if (!alive) return;
+        setCargandoIA(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const categorias = ['Todas', ...new Set(productos.map((item) => item.categoria).filter(Boolean))];
@@ -65,13 +91,13 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
           <Search size={16} />
           <input
             type="text"
-            placeholder="¿Que estas buscando?"
+            placeholder="¿Qué estás buscando?"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
         <div className="market-login-actions">
-          <button type="button" onClick={onLoginClick}>Iniciar sesion</button>
+          <button type="button" onClick={onLoginClick}>Iniciar sesión</button>
           <button type="button" className="register" onClick={onRegisterClick}>Registrarse</button>
         </div>
       </div>
@@ -100,9 +126,19 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
       </div>
 
       {cargandoProductos ? (
-        <p className="ia-message">Cargando catálogo...</p>
+        <div className="market-grid" aria-label="Cargando catálogo">
+          {Array.from({ length: 8 }).map((_, idx) => <ProductSkeleton key={idx} />)}
+        </div>
       ) : errorProductos ? (
-        <p className="ia-message error">{errorProductos}</p>
+        <div className="empty-state">
+          <p className="ia-message error">{errorProductos}</p>
+          <p className="ia-message">Verifica que el backend esté corriendo y que `VITE_API_BASE_URL` apunte bien.</p>
+        </div>
+      ) : productosDestacados.length === 0 ? (
+        <div className="empty-state">
+          <p className="ia-message">No hay productos para mostrar con estos filtros.</p>
+          <p className="ia-message">Prueba otra categoría o borra la búsqueda.</p>
+        </div>
       ) : (
         <div className="market-grid">
           {productosDestacados.map((item) => (
@@ -112,7 +148,7 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
               <h4>{item.nombre}</h4>
               <p className="brand-name">{item.marca} · {item.categoria}</p>
               <p>Bs. {item.precio_venta}</p>
-              <button type="button"><ShoppingCart size={16} /> Agregar</button>
+              <button type="button" className="soft-btn"><ShoppingCart size={16} /> Agregar</button>
             </article>
           ))}
         </div>

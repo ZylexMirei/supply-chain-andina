@@ -33,6 +33,11 @@ body {
   color: var(--text-main);
 }
 
+*:focus-visible {
+  outline: 3px solid rgba(56, 214, 255, 0.55);
+  outline-offset: 2px;
+}
+
 .app-shell { min-height: 100vh; }
 .home-hyper { padding: 14px; }
 
@@ -99,10 +104,16 @@ body {
   cursor: pointer;
   color: var(--text-main);
 }
+.market-login-actions button:hover {
+  border-color: rgba(56, 214, 255, 0.55);
+}
 .market-login-actions .register {
   background: linear-gradient(90deg, var(--primary), var(--primary-dark));
   color: #fff;
   border-color: transparent;
+}
+.market-login-actions .register:hover {
+  filter: brightness(1.02);
 }
 
 .market-cats {
@@ -192,6 +203,14 @@ body {
   gap: 8px;
   cursor: pointer;
   color: var(--text-main);
+}
+.product-card button:hover {
+  border-color: rgba(56, 214, 255, 0.55);
+  background: rgba(56, 214, 255, 0.08);
+}
+
+.soft-btn {
+  border-color: rgba(56, 214, 255, 0.45);
 }
 
 .card-premium {
@@ -309,6 +328,23 @@ body {
 .action-btn.full { width: 100%; }
 .action-btn { background: linear-gradient(90deg, var(--primary), var(--primary-dark)); color: #fff; }
 .action-btn.outline { background: transparent; color: var(--primary); border-color: var(--primary); margin-top: 10px; }
+.action-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.danger-btn {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.danger-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
 
 .auth-wrapper {
   min-height: 100vh;
@@ -340,6 +376,54 @@ body {
 .metrica-icono { padding: 10px; border-radius: 10px; background: rgba(249, 115, 22, 0.14); color: var(--primary); }
 .metrica-icono.danger { background: rgba(239, 68, 68, 0.16); color: var(--danger); }
 .metrica-valor { font-size: 1.45rem; font-weight: 700; margin: 0.5rem 0 0; }
+.metrica-valor.danger-text { color: var(--danger); }
+
+.empty-state {
+  padding: 18px 14px 22px;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-60%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%);
+  animation: shimmer 1.2s infinite;
+}
+[data-theme='dark'] .skeleton::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  margin: 10px 0;
+}
+.skeleton-line.short { width: 60%; }
+.skeleton-pill {
+  display: inline-block;
+  min-width: 72px;
+  background: rgba(148, 163, 184, 0.25);
+}
+.skeleton-btn {
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(148, 163, 184, 0.25);
+}
+.skeleton-box {
+  background: rgba(148, 163, 184, 0.25) !important;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-60%); }
+  100% { transform: translateX(60%); }
+}
 
 @media (max-width: 900px) {
   .market-topbar { grid-template-columns: 1fr; }
