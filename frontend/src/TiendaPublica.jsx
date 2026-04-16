@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ShoppingCart, Sparkles, PlusCircle, Search } from 'lucide-react';
 import { getJson } from './lib/api.js';
+import { getProductImageUrl } from './data/product-image-urls.js';
 
 function ProductSkeleton() {
   return (
@@ -141,16 +142,31 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
         </div>
       ) : (
         <div className="market-grid">
-          {productosDestacados.map((item) => (
-            <article key={item.id_producto} className="product-card">
-              <span className={`stock-badge ${item.estado_stock?.toLowerCase()}`}>{item.estado_stock}</span>
-              <div className="product-image-placeholder" />
-              <h4>{item.nombre}</h4>
-              <p className="brand-name">{item.marca} · {item.categoria}</p>
-              <p>Bs. {item.precio_venta}</p>
-              <button type="button" className="soft-btn"><ShoppingCart size={16} /> Agregar</button>
-            </article>
-          ))}
+          {productosDestacados.map((item) => {
+            const imageUrl = getProductImageUrl(item);
+            return (
+              <article key={item.id_producto} className="product-card">
+                <span className={`stock-badge ${item.estado_stock?.toLowerCase()}`}>{item.estado_stock}</span>
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={item.nombre || 'Producto'}
+                    className="product-image"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`product-image-placeholder ${imageUrl ? 'hidden' : ''}`} />
+                <h4>{item.nombre}</h4>
+                <p className="brand-name">{item.marca} · {item.categoria}</p>
+                <p>Bs. {item.precio_venta}</p>
+                <button type="button" className="soft-btn"><ShoppingCart size={16} /> Agregar</button>
+              </article>
+            );
+          })}
         </div>
       )}
 

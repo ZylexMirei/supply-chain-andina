@@ -39,6 +39,8 @@ function App() {
     password: '',
     nombreCliente: '',
     telefonoCliente: '',
+    recoveryCode: '',
+    newPassword: '',
   });
 
   const abrirLogin = () => {
@@ -114,6 +116,48 @@ function App() {
     }
   };
 
+  const handleSolicitarRecuperacion = async (e) => {
+    e.preventDefault();
+    setMensaje({ tipo: '', texto: '' });
+
+    if (!authFields.email) {
+      setMensaje({ tipo: 'error', texto: 'Ingresa tu correo para recuperar la contraseña.' });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const data = await postJson('/recuperar_password.php', { email: authFields.email });
+      setMensaje({ tipo: 'success', texto: data?.message || 'Código enviado. Revisa tu correo.' });
+      setAuthMode('recover_confirm');
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err?.message || 'No se pudo enviar el código de recuperación.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmarRecuperacion = async (e) => {
+    e.preventDefault();
+    setMensaje({ tipo: '', texto: '' });
+    setIsLoading(true);
+    try {
+      const data = await postJson('/reset_password.php', {
+        email: authFields.email,
+        codigo: authFields.recoveryCode,
+        newPassword: authFields.newPassword,
+      });
+
+      setMensaje({ tipo: 'success', texto: data?.message || 'Contraseña actualizada. Ahora inicia sesión.' });
+      setAuthFields((prev) => ({ ...prev, password: '', recoveryCode: '', newPassword: '' }));
+      setAuthMode('login');
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err?.message || 'No se pudo actualizar la contraseña.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const cerrarSesion = () => {
     setUsuarioActivo(null);
     setCodigo('');
@@ -142,6 +186,8 @@ function App() {
               onClose={() => setShowAuth(false)}
               onLogin={handleLogin}
               onRegister={handleRegistroCliente}
+              onRequestRecovery={handleSolicitarRecuperacion}
+              onConfirmRecovery={handleConfirmarRecuperacion}
               fields={authFields}
               setFields={setAuthFields}
             />
