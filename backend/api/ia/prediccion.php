@@ -1,6 +1,6 @@
 <?php
 // backend/api/ia/prediccion.php
-require_once '../../conexion.php';
+require_once __DIR__ . '/../../conexion.php';
 header('Content-Type: application/json');
 
 $id_producto = $_GET['id'] ?? 1; // Por defecto analizamos el producto 1 (Coca-Cola)
@@ -8,10 +8,10 @@ $id_producto = $_GET['id'] ?? 1; // Por defecto analizamos el producto 1 (Coca-C
 try {
     // 1. Buscamos el producto y su stock actual
     $stmt_prod = $pdo->prepare("
-        SELECT p.nombre, i.stock_actual, i.stock_maximo 
+        SELECT p.nombre, COALESCE(i.stock_actual, p.stock, 0) AS stock_actual, COALESCE(i.stock_maximo, 0) AS stock_maximo
         FROM producto p 
-        JOIN inventario i ON p.id_producto = i.id_producto 
-        WHERE p.id_producto = ?
+        LEFT JOIN inventario i ON p.id = i.id_producto
+        WHERE p.id = ?
     ");
     $stmt_prod->execute([$id_producto]);
     $producto = $stmt_prod->fetch(PDO::FETCH_ASSOC);
@@ -24,7 +24,7 @@ try {
     $stmt_ventas = $pdo->prepare("
         SELECT MONTH(p.fecha) as mes, SUM(dp.cantidad) as total_vendido
         FROM pedido p
-        JOIN detalle_pedido dp ON p.id_pedido = dp.id_pedido
+        JOIN detalle_pedido dp ON p.id = dp.id_pedido
         WHERE dp.id_producto = ? AND p.estado = 'Aprobado' 
         AND p.fecha >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
         GROUP BY MONTH(p.fecha)

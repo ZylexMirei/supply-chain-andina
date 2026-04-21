@@ -1,6 +1,18 @@
 // Si quieres forzar una imagen específica por id_producto, usa este objeto.
 export const PRODUCT_IMAGE_URLS = {
-  
+  // Bebidas (IDs 30-41) mapeadas 1:1 para evitar cruces.
+  30: 'https://fsa.bo/productos/01658-01.jpg', // Coca Cola 2L
+  31: 'https://farmacorp.com/cdn/shop/files/909704_59a3c259-afab-4dde-bdd3-0b70011343cf.jpg?v=1775708707&width=800', // Pepsi 2L
+  32: 'https://fsa.bo/productos/03282-01.jpg', // Fanta
+  33: 'https://farmacorp.com/cdn/shop/files/909706_19d4afa4-2ae2-4dce-9d98-806d5aeb4068.jpg?v=1769026858&width=800', // Sprite
+  34: 'https://aceleralastatic.nyc3.cdn.digitaloceanspaces.com/files/uploads/1499/1596061898-110-san-luis-sin-gas-2-5-lt-jpg.jpg', // Agua Vital
+  35: 'https://aceleralastatic.nyc3.cdn.digitaloceanspaces.com/files/uploads/1499/1596061898-110-san-luis-sin-gas-2-5-lt-jpg.jpg', // Agua San Luis
+  36: 'https://farmacorp.com/cdn/shop/files/7771609003428.jpg?v=1775708701&width=800', // Jugo Del Valle
+  37: 'https://farmacorp.com/cdn/shop/files/7771224000789.jpg?v=1714440715&width=800', // Jugo Tampico
+  38: 'https://chedrauimx.vtexassets.com/arquivos/ids/67509509-800-auto?width=800&height=auto&aspect=true', // Red Bull
+  39: 'https://farmacorp.com/cdn/shop/files/909858_dbd74583-9c35-4207-a586-2f7cb6729931_1200x1200.jpg?v=1773779445', // Monster
+  40: 'https://www.cerveza-pacena.com/sites/g/files/wnfebl10741/files/Pace%C3%B1a/Products/botella-710.png', // Cerveza Paceña
+  41: 'https://www.fidalga.com/cdn/shop/products/9ad962b6-3d67-4ffa-b243-0720db397853_fca0cff1-87b5-47a2-82ff-9d58e387d973.png?v=1746461197', // Cerveza Huari
 };
 
 const CATEGORY_IMAGE_URLS = {
@@ -94,6 +106,16 @@ const CATEGORY_IMAGE_URLS = {
 };
 
 const FALLBACK_IMAGE_POOL = Object.values(CATEGORY_IMAGE_URLS).flat();
+const CATEGORY_KEY_BY_ID = {
+  1: 'lacteos',
+  2: 'abarrotes',
+  3: 'enlatados',
+  4: 'bebidas',
+  5: 'snacks',
+  6: 'higiene',
+  7: 'limpieza',
+  8: 'congelados',
+};
 
 function normalizeCategory(value = '') {
   const txt = String(value || '')
@@ -125,8 +147,9 @@ export function getProductImageUrl(producto) {
   const explicit = PRODUCT_IMAGE_URLS[key] || PRODUCT_IMAGE_URLS[Number(key)];
   if (explicit) return explicit;
 
-  // Prioridad 3: Mapeo automático por categoría.
-  const categoryKey = normalizeCategory(producto.categoria);
+  // Prioridad 3: Mapeo automático por categoría (id_categoria primero, texto como respaldo).
+  const categoryKeyById = CATEGORY_KEY_BY_ID[Number(producto.id_categoria)];
+  const categoryKey = categoryKeyById || normalizeCategory(producto.categoria);
   const list = CATEGORY_IMAGE_URLS[categoryKey];
   const pool = list && list.length > 0 ? list : FALLBACK_IMAGE_POOL;
   if (!pool || pool.length === 0) return '';

@@ -83,6 +83,8 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
   });
 
   const productosDestacados = productosFiltrados.slice(0, 12);
+  const fallbackImageFor = (item) =>
+    `https://picsum.photos/seed/andina-${encodeURIComponent(item?.id_producto ?? item?.nombre ?? 'producto')}/480/360`;
 
   return (
     <div className="market-shell">
@@ -154,8 +156,15 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
                     className="product-image"
                     loading="lazy"
                     onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      const img = e.currentTarget;
+                      const fallback = fallbackImageFor(item);
+                      if (img.dataset.fallbackApplied === '1') {
+                        img.style.display = 'none';
+                        img.nextElementSibling?.classList.remove('hidden');
+                        return;
+                      }
+                      img.dataset.fallbackApplied = '1';
+                      img.src = fallback;
                     }}
                   />
                 ) : null}

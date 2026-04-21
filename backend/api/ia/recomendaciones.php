@@ -1,6 +1,6 @@
 <?php
 // backend/api/ia/recomendaciones.php
-require_once '../../conexion.php';
+require_once __DIR__ . '/../../conexion.php';
 header('Content-Type: application/json');
 
 $id_producto_actual = $_GET['id'] ?? null;
@@ -16,14 +16,14 @@ try {
     // 3. Los cuenta y te devuelve los 3 que más se repiten.
     
     $stmt = $pdo->prepare("
-        SELECT p.id_producto, p.nombre, p.marca, p.precio_venta, COUNT(dp.id_producto) as frecuencia_compra
+        SELECT p.id AS id_producto, p.nombre, p.marca, p.precio_venta, COUNT(dp.id_producto) AS frecuencia_compra
         FROM detalle_pedido dp
-        JOIN producto p ON dp.id_producto = p.id_producto
+        JOIN producto p ON dp.id_producto = p.id
         WHERE dp.id_pedido IN (
             SELECT id_pedido FROM detalle_pedido WHERE id_producto = ?
         )
         AND dp.id_producto != ? -- Excluimos el producto que ya está viendo
-        GROUP BY p.id_producto
+        GROUP BY p.id, p.nombre, p.marca, p.precio_venta
         ORDER BY frecuencia_compra DESC
         LIMIT 3
     ");

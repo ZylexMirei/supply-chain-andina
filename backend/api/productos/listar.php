@@ -1,5 +1,5 @@
 <?php
-require_once '../../conexion.php';
+require_once __DIR__ . '/../../conexion.php';
 header('Content-Type: application/json');
 
 $metodo = $_SERVER['REQUEST_METHOD'];
@@ -9,24 +9,27 @@ switch ($metodo) {
         try {
             $stmt = $pdo->query("
                 SELECT 
-                    id_producto, 
-                    nombre, 
-                    marca, 
-                    categoria, 
-                    precio_venta, 
-                    costo_compra,
-                    (precio_venta - costo_compra) AS ganancia,
-                    stock_actual,
-                    stock_minimo, 
-                    stock_maximo,
+                    p.id AS id_producto,
+                    p.id_categoria,
+                    p.nombre,
+                    p.marca,
+                    COALESCE(c.nombre, 'Sin categoría') AS categoria,
+                    p.precio_venta,
+                    p.costo_compra,
+                    (p.precio_venta - p.costo_compra) AS ganancia,
+                    COALESCE(i.stock_actual, p.stock, 0) AS stock_actual,
+                    COALESCE(i.stock_minimo, 0) AS stock_minimo,
+                    COALESCE(i.stock_maximo, 0) AS stock_maximo,
                     -- AQUI OCURRE LA MAGIA DEL INVENTARIO:
                     CASE 
-                        WHEN stock_actual <= 0 THEN 'AGOTADO'
-                        WHEN stock_actual <= stock_minimo THEN 'REORDEN'
+                        WHEN COALESCE(i.stock_actual, p.stock, 0) <= 0 THEN 'AGOTADO'
+                        WHEN COALESCE(i.stock_actual, p.stock, 0) <= COALESCE(i.stock_minimo, 0) THEN 'REORDEN'
                         ELSE 'NORMAL'
                     END as estado_stock
-                FROM producto 
-                ORDER BY categoria, nombre ASC
+                FROM producto p
+                LEFT JOIN categoria c ON c.id = p.id_categoria
+                LEFT JOIN inventario i ON i.id_producto = p.id
+                ORDER BY categoria, p.nombre ASC
             ");
             $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
