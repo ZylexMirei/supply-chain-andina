@@ -175,7 +175,11 @@ function App() {
 
       {vista === VISTAS.HOME && (
         <div className="home-hyper">
-          <TiendaPublica onLoginClick={abrirLogin} onRegisterClick={abrirRegistro} />
+          <TiendaPublica
+            onLoginClick={abrirLogin}
+            onRegisterClick={abrirRegistro}
+            usuarioActivo={usuarioActivo}
+          />
 
           {showAuth && (
             <AuthModal

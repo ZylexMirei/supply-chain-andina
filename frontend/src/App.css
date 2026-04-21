@@ -31,6 +31,7 @@ body {
   font-family: 'Segoe UI', system-ui, sans-serif;
   background: var(--bg-body);
   color: var(--text-main);
+  overflow-y: scroll;
 }
 
 *:focus-visible {
@@ -43,8 +44,8 @@ body {
 
 .theme-toggle-btn {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: 12px;
+  right: 12px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -54,7 +55,8 @@ body {
   display: grid;
   place-items: center;
   cursor: pointer;
-  z-index: 60;
+  z-index: 999;
+  transform: none;
 }
 
 .market-shell {
@@ -159,6 +161,15 @@ body {
 }
 .market-section-head h3 { margin: 0; }
 .market-section-head span { color: var(--text-dim); font-weight: 600; }
+.market-inline-note {
+  margin: 0 14px 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  color: var(--text-main);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+}
 
 .market-grid {
   padding: 10px 12px 18px;
@@ -204,6 +215,11 @@ body {
 .product-card h4 { margin: 0; font-size: 0.95rem; }
 .product-card p { margin: 8px 0; font-weight: 700; }
 .product-card .brand-name { color: var(--text-dim); font-weight: 500; font-size: 0.86rem; }
+.stock-text {
+  color: var(--text-dim);
+  font-weight: 600;
+  margin: 4px 0;
+}
 .product-card button {
   width: 100%;
   border: 1px solid var(--border);
@@ -219,6 +235,17 @@ body {
 .product-card button:hover {
   border-color: rgba(56, 214, 255, 0.55);
   background: rgba(56, 214, 255, 0.08);
+}
+.product-card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--border);
+}
+.login-hint {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
 }
 
 .soft-btn {

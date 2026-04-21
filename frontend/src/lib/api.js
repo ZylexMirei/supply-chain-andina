@@ -28,7 +28,7 @@ async function safeJson(response) {
 }
 
 export function getApiBase() {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/backend/api';
 }
 
 export async function apiFetch(path, options = {}) {
@@ -53,6 +53,9 @@ export async function apiFetch(path, options = {}) {
   } catch (e) {
     if (e?.name === 'AbortError') {
       throw new Error('Tiempo de espera agotado. Revisa tu conexión o el servidor.');
+    }
+    if (e instanceof TypeError) {
+      throw new Error('No se pudo conectar con el backend. Verifica que esté corriendo en la URL configurada.');
     }
     throw e;
   } finally {

@@ -16,13 +16,14 @@ function ProductSkeleton() {
   );
 }
 
-export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
+export default function TiendaPublica({ onLoginClick, onRegisterClick, usuarioActivo }) {
   const [productos, setProductos] = useState([]);
   const [cargandoProductos, setCargandoProductos] = useState(true);
   const [errorProductos, setErrorProductos] = useState('');
   const [sugerencias, setSugerencias] = useState([]);
   const [cargandoIA, setCargandoIA] = useState(true);
   const [errorIA, setErrorIA] = useState('');
+  const [mensajeAccion, setMensajeAccion] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('Todas');
 
@@ -86,6 +87,20 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
   const fallbackImageFor = (item) =>
     `https://picsum.photos/seed/andina-${encodeURIComponent(item?.id_producto ?? item?.nombre ?? 'producto')}/480/360`;
 
+  const handleAgregar = (item) => {
+    const stock = Number(item?.stock_actual ?? 0);
+    if (!usuarioActivo) {
+      setMensajeAccion('Para agregar productos al carrito primero debes iniciar sesión o registrarte.');
+      onLoginClick?.();
+      return;
+    }
+    if (!Number.isFinite(stock) || stock <= 0) {
+      setMensajeAccion('Este producto no tiene stock disponible por el momento.');
+      return;
+    }
+    setMensajeAccion(`"${item.nombre}" listo para agregar. Próximo paso: conectar carrito del cliente.`);
+  };
+
   return (
     <div className="market-shell">
       <div className="market-topbar">
@@ -127,6 +142,7 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
         <h3>Productos destacados</h3>
         <span>{productosDestacados.length} visibles</span>
       </div>
+      {mensajeAccion ? <div className="market-inline-note">{mensajeAccion}</div> : null}
 
       {cargandoProductos ? (
         <div className="market-grid" aria-label="Cargando catálogo">
@@ -146,6 +162,11 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
         <div className="market-grid">
           {productosDestacados.map((item) => {
             const imageUrl = getProductImageUrl(item);
+            const stockActual = Number(item.stock_actual ?? 0);
+            const sinStock = !Number.isFinite(stockActual) || stockActual <= 0;
+            const requiereLogin = !usuarioActivo;
+            const deshabilitarAgregar = sinStock;
+            const textoBoton = sinStock ? 'Sin stock' : 'Agregar';
             return (
               <article key={item.id_producto} className="product-card">
                 <span className={`stock-badge ${item.estado_stock?.toLowerCase()}`}>{item.estado_stock}</span>
@@ -171,8 +192,18 @@ export default function TiendaPublica({ onLoginClick, onRegisterClick }) {
                 <div className={`product-image-placeholder ${imageUrl ? 'hidden' : ''}`} />
                 <h4>{item.nombre}</h4>
                 <p className="brand-name">{item.marca} · {item.categoria}</p>
+                <p className="stock-text">Stock: {stockActual}</p>
                 <p>Bs. {item.precio_venta}</p>
-                <button type="button" className="soft-btn"><ShoppingCart size={16} /> Agregar</button>
+                <button
+                  type="button"
+                  className="soft-btn"
+                  onClick={() => handleAgregar(item)}
+                  disabled={deshabilitarAgregar}
+                  title={requiereLogin ? 'Inicia sesión para comprar' : 'Agregar al carrito'}
+                >
+                  <ShoppingCart size={16} /> {textoBoton}
+                </button>
+                {requiereLogin && !sinStock ? <p className="login-hint">Necesitas iniciar sesión para comprar.</p> : null}
               </article>
             );
           })}
