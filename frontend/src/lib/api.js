@@ -28,7 +28,7 @@ async function safeJson(response) {
 }
 
 export function getApiBase() {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/backend/api';
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 }
 
 export async function apiFetch(path, options = {}) {
